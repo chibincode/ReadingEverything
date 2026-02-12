@@ -1,0 +1,12 @@
+.DS_Store
+
+# SwiftPM / Xcode build output
+EnglishPracticeAssistant/.build/
+EnglishPracticeAssistant/Build/
+EnglishPracticeAssistant/.swiftpm/
+
+# Xcode user data
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcuserdatad/
+*.xcuserstate
