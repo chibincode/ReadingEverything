@@ -77,6 +77,9 @@ struct SettingsView: View {
                     }
                     .onChange(of: settings.aiPreset) { newPreset in
                         applyPreset(newPreset)
+                        if newPreset == .doubaoOpenSpeech {
+                            normalizeOpenSpeechConfig()
+                        }
                         showAdvancedProviderFields = (newPreset == .custom)
                     }
 
@@ -85,18 +88,26 @@ struct SettingsView: View {
                     }
 
                     if settings.aiPreset == .custom || showAdvancedProviderFields {
-                        TextField(baseURLPlaceholder, text: $settings.aiConfig.baseURL)
+                        labeledTextField("Base URL", text: $settings.aiConfig.baseURL, placeholder: baseURLPlaceholder)
                     }
                     if usesOpenSpeechFlow {
-                        TextField("App ID", text: $settings.aiConfig.appID)
-                        TextField("Resource ID", text: $settings.aiConfig.resourceID)
-                        TextField("Speaker", text: $settings.aiConfig.voice)
+                        labeledTextField("App ID", text: $settings.aiConfig.appID, placeholder: "App ID")
+                        if settings.aiPreset == .doubaoOpenSpeech {
+                            openSpeechResourcePicker
+                            openSpeechSpeakerPicker
+                        } else {
+                            labeledTextField("Resource ID", text: $settings.aiConfig.resourceID, placeholder: "Resource ID")
+                            labeledTextField("Speaker", text: $settings.aiConfig.voice, placeholder: "Speaker")
+                        }
                     } else {
-                        TextField("Model / Endpoint ID", text: $settings.aiConfig.model)
-                        TextField("Voice", text: $settings.aiConfig.voice)
+                        labeledTextField("Model / Endpoint ID", text: $settings.aiConfig.model, placeholder: "Model / Endpoint ID")
+                        labeledTextField("Voice", text: $settings.aiConfig.voice, placeholder: "Voice")
                     }
-                    SecureField(apiKeyPlaceholder, text: $settings.aiConfig.apiKey)
+                    labeledSecureField(usesOpenSpeechFlow ? "Access Key" : "API Key", text: $settings.aiConfig.apiKey, placeholder: apiKeyPlaceholder)
                     if settings.aiPreset == .custom || showAdvancedProviderFields {
+                        Text("Headers JSON")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                         TextEditor(text: $settings.aiConfig.headersJSON)
                             .frame(height: 80)
                             .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.gray.opacity(0.2)))
@@ -104,7 +115,7 @@ struct SettingsView: View {
                     }
                     quickSetupNotes
 
-                    TextField("TTS test text", text: $ttsTestText)
+                    labeledTextField("TTS Test Text", text: $ttsTestText, placeholder: "TTS test text")
                     HStack(spacing: 10) {
                         Button(isTestingTTS ? "Testing..." : "Test AI TTS") {
                             runTTSTest()
@@ -129,6 +140,9 @@ struct SettingsView: View {
             showAdvancedProviderFields = (settings.aiPreset == .custom)
             if settings.aiPreset != .custom && !hasUserConfiguredAIProvider {
                 applyPreset(settings.aiPreset)
+            }
+            if settings.aiPreset == .doubaoOpenSpeech {
+                normalizeOpenSpeechConfig()
             }
         }
     }
@@ -247,14 +261,91 @@ struct SettingsView: View {
             settings.aiConfig = AIProviderConfig(
                 baseURL: "https://openspeech.bytedance.com/api/v3/tts/unidirectional",
                 model: "",
-                voice: "BV001_streaming",
+                voice: "zh_female_sophie_conversation_wvae_bigtts",
                 appID: "",
-                resourceID: "",
+                resourceID: "seed-tts-1.0",
                 headersJSON: "",
                 apiKey: apiKey
             )
         case .custom:
             break
+        }
+    }
+
+    @ViewBuilder
+    private var openSpeechResourcePicker: some View {
+        Text("Resource ID")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        Picker("Resource ID", selection: Binding(
+            get: { canonicalResourceID(settings.aiConfig.resourceID) },
+            set: { newValue in
+                settings.aiConfig.resourceID = newValue
+                normalizeOpenSpeechConfig()
+            }
+        )) {
+            ForEach(openSpeechResourceOptions, id: \.self) { resourceID in
+                Text(resourceID).tag(resourceID)
+            }
+        }
+        .pickerStyle(.menu)
+    }
+
+    @ViewBuilder
+    private var openSpeechSpeakerPicker: some View {
+        Text("Speaker")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        Picker("Speaker", selection: $settings.aiConfig.voice) {
+            ForEach(openSpeechVoiceOptions(for: canonicalResourceID(settings.aiConfig.resourceID))) { option in
+                Text(option.label).tag(option.voiceType)
+            }
+        }
+        .pickerStyle(.menu)
+    }
+
+    private let openSpeechResourceOptions = ["seed-tts-1.0", "seed-tts-2.0"]
+
+    private func openSpeechVoiceOptions(for resourceID: String) -> [OpenSpeechVoiceOption] {
+        let all: [OpenSpeechVoiceOption] = [
+            .init(resourceID: "seed-tts-1.0", voiceType: "zh_female_qingxinnvsheng_mars_bigtts", note: "女生温柔语速慢"),
+            .init(resourceID: "seed-tts-1.0", voiceType: "zh_female_shuangkuaisisi_moon_bigtts", note: "女生语速正常"),
+            .init(resourceID: "seed-tts-1.0", voiceType: "zh_female_sophie_conversation_wvae_bigtts", note: "女生语速正常靠谱"),
+            .init(resourceID: "seed-tts-1.0", voiceType: "zh_male_M100_conversation_wvae_bigtts", note: "男生语速正常"),
+            .init(resourceID: "seed-tts-2.0", voiceType: "zh_female_vv_uranus_bigtts", note: "可爱女生推荐, 英文语数慢")
+        ]
+        return all.filter { $0.resourceID == resourceID }
+    }
+
+    private func canonicalResourceID(_ value: String) -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        switch trimmed {
+        case "volc.service_type.10029":
+            return "seed-tts-1.0"
+        case "volc.service_type.10048":
+            return "seed-tts-1.0-concurr"
+        default:
+            return value.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+    }
+
+    private func normalizeOpenSpeechConfig() {
+        let canonical = canonicalResourceID(settings.aiConfig.resourceID)
+        if openSpeechResourceOptions.contains(canonical) {
+            settings.aiConfig.resourceID = canonical
+        } else {
+            settings.aiConfig.resourceID = "seed-tts-1.0"
+        }
+
+        let options = openSpeechVoiceOptions(for: settings.aiConfig.resourceID)
+        let preferredDefault = "zh_female_sophie_conversation_wvae_bigtts"
+        if settings.aiConfig.resourceID == "seed-tts-1.0",
+           options.contains(where: { $0.voiceType == preferredDefault }) {
+            settings.aiConfig.voice = preferredDefault
+        } else if let current = options.first(where: { $0.voiceType == settings.aiConfig.voice }) {
+            settings.aiConfig.voice = current.voiceType
+        } else if let first = options.first {
+            settings.aiConfig.voice = first.voiceType
         }
     }
 
@@ -321,6 +412,34 @@ struct SettingsView: View {
         }
         let message = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
         return message.isEmpty ? "Unknown error." : message
+    }
+
+    @ViewBuilder
+    private func labeledTextField(_ label: String, text: Binding<String>, placeholder: String) -> some View {
+        Text(label)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        TextField(placeholder, text: text)
+    }
+
+    @ViewBuilder
+    private func labeledSecureField(_ label: String, text: Binding<String>, placeholder: String) -> some View {
+        Text(label)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        SecureField(placeholder, text: text)
+    }
+}
+
+private struct OpenSpeechVoiceOption: Identifiable {
+    let resourceID: String
+    let voiceType: String
+    let note: String
+
+    var id: String { voiceType }
+
+    var label: String {
+        "\(voiceType)（\(note)）"
     }
 }
 

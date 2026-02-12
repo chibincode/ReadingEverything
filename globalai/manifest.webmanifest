@@ -1,0 +1,15 @@
+{
+  "name": "Agent Pulse Board",
+  "short_name": "AgentPulse",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f6f5f3",
+  "theme_color": "#1f222b",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

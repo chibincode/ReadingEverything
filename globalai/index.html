@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1f222b" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <title>Agent Pulse Board</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-glow"></div>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand-wrap">
+          <p class="eyebrow">Global Agent Monitor</p>
+          <h1>Agent Pulse Board</h1>
+        </div>
+        <div class="quick-stats" id="quickStats"></div>
+      </header>
+
+      <section class="controls" aria-label="Board controls">
+        <label class="switch-row">
+          <input type="checkbox" id="actionableOnly" />
+          <span>Only show waiting or blocked</span>
+        </label>
+
+        <label class="threshold-wrap">
+          <span>Blocked timeout (minutes)</span>
+          <input type="number" id="blockedMinutes" min="5" step="5" />
+        </label>
+
+        <div class="button-row">
+          <button id="notifyBtn" type="button">Enable notifications</button>
+          <button id="exportBtn" type="button">Export JSON</button>
+          <label class="import-label" for="importInput">Import JSON</label>
+          <input id="importInput" type="file" accept="application/json" />
+          <button id="resetBtn" type="button" class="danger">Reset defaults</button>
+        </div>
+      </section>
+
+      <section id="board" class="board" aria-live="polite"></section>
+    </main>
+
+    <template id="agentCardTemplate">
+      <article class="agent-card">
+        <div class="agent-card-head">
+          <div>
+            <p class="agent-name"></p>
+            <p class="agent-source"></p>
+          </div>
+          <span class="badge"></span>
+        </div>
+
+        <div class="agent-meta">
+          <p><strong>Last event:</strong> <span class="last-event"></span></p>
+          <p><strong>Need you:</strong> <span class="need-you"></span></p>
+        </div>
+
+        <div class="url-wrap">
+          <input class="agent-url" type="url" placeholder="https://..." />
+          <a class="open-link" target="_blank" rel="noreferrer">Open</a>
+        </div>
+
+        <div class="status-actions"></div>
+
+        <div class="notes-wrap">
+          <label>Notes</label>
+          <textarea class="agent-notes" rows="2" placeholder="What is this agent currently doing?"></textarea>
+        </div>
+      </article>
+    </template>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
