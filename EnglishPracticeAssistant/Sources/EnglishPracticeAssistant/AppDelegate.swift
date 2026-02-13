@@ -25,8 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         detectionOverlayController = DetectionOverlayController(appState: appState)
         settingsWindowController = SettingsWindowController()
         appState.shouldIgnoreMouseUp = { [weak floatingBarController, weak resultPanelController] point in
-            // Include panel shadow / hit slop so button clicks never become selection commits.
-            if let floatingBarController, floatingBarController.contains(point: point, extraPadding: 14) {
+            if let floatingBarController, floatingBarController.shouldIgnoreGlobalMouseUp(point: point) {
                 return true
             }
             if let resultPanelController, resultPanelController.contains(point: point) {

@@ -43,7 +43,7 @@ private struct ToastView: View {
             .font(.system(size: 12, weight: .medium))
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(VisualEffectView(material: .hudWindow, blendingMode: .withinWindow))
+            .background(GlassSurfaceView(kind: .toast, cornerRadius: 10))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }

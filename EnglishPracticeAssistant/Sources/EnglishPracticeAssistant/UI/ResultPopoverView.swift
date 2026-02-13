@@ -28,7 +28,7 @@ struct ResultPopoverView: View {
             }
         }
         .padding(16)
-        .background(VisualEffectView(material: .sidebar, blendingMode: .withinWindow))
+        .background(GlassSurfaceView(kind: .resultPanel, cornerRadius: 14))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 

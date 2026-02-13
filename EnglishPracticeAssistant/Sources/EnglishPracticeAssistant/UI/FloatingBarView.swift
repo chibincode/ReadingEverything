@@ -2,6 +2,11 @@ import SwiftUI
 
 struct FloatingBarView: View {
     @ObservedObject var appState: AppState
+    let onDragStart: () -> Void
+    let onDragChanged: (CGSize) -> Void
+    let onDragEnd: () -> Void
+
+    @State private var dragGestureActive = false
     private let transitionDuration = 0.18
 
     private var mode: FloatingBarMode {
@@ -10,6 +15,25 @@ struct FloatingBarView: View {
 
     var body: some View {
         HStack(spacing: 12) {
+            DragHandleView()
+                .gesture(
+                    DragGesture(minimumDistance: 1)
+                        .onChanged { value in
+                            if !dragGestureActive {
+                                dragGestureActive = true
+                                onDragStart()
+                            }
+                            onDragChanged(value.translation)
+                        }
+                        .onEnded { _ in
+                            dragGestureActive = false
+                            onDragEnd()
+                        }
+                )
+
+            Divider()
+                .frame(height: 16)
+
             if mode == .reading {
                 HStack(spacing: 6) {
                     ReadingWaveView()
@@ -34,6 +58,10 @@ struct FloatingBarView: View {
                 .labelStyle(.titleAndIcon)
                 .frame(minWidth: 92, alignment: .leading)
                 .transition(.opacity.combined(with: .move(edge: .leading)))
+
+                Divider()
+                    .frame(height: 16)
+                    .transition(.opacity)
             }
 
             Button {
@@ -65,10 +93,21 @@ struct FloatingBarView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(VisualEffectView(material: .hudWindow, blendingMode: .withinWindow))
+        .background(GlassSurfaceView(kind: .floatingBar, cornerRadius: 14))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .fixedSize(horizontal: true, vertical: true)
         .animation(.easeInOut(duration: transitionDuration), value: mode)
+    }
+}
+
+private struct DragHandleView: View {
+    var body: some View {
+        Image(systemName: "line.3.horizontal")
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(.secondary)
+            .frame(width: 14, height: 18)
+            .contentShape(Rectangle())
+            .help("Drag")
     }
 }
 

@@ -14,11 +14,29 @@ final class FloatingBarController {
     private var lastSelectionSignature: String?
     private var pendingUnlockAfterRead = false
     private var stableSelectionOrigin: CGPoint?
+    private var isDraggingBar = false
+    private var dragStartFrame: CGRect?
+    private var manualOrigin: CGPoint?
+    private var manualOriginSelectionSignature: String?
+    private var suppressNextOutsideMouseUp = false
 
     init(appState: AppState) {
         self.appState = appState
         panel = FloatingPanel(contentRect: CGRect(x: 0, y: 0, width: 380, height: 46))
-        hostingView = NSHostingView(rootView: FloatingBarView(appState: appState))
+        hostingView = NSHostingView(
+            rootView: FloatingBarView(
+                appState: appState,
+                onDragStart: {},
+                onDragChanged: { _ in },
+                onDragEnd: {}
+            )
+        )
+        hostingView.rootView = FloatingBarView(
+            appState: appState,
+            onDragStart: { [weak self] in self?.beginDrag() },
+            onDragChanged: { [weak self] translation in self?.updateDrag(translation: translation) },
+            onDragEnd: { [weak self] in self?.endDrag() }
+        )
         panel.contentView = hostingView
 
         Publishers.CombineLatest4(
@@ -45,9 +63,21 @@ final class FloatingBarController {
         readingAnchorRect: CGRect?,
         selectionCommitPoint: CGPoint?
     ) {
+        syncManualPlacement(for: selection)
+
         let transitionedIntoReading = isReading && !lastIsReading
         let transitionedOutOfReading = !isReading && lastIsReading
         lastIsReading = isReading
+
+        if isDraggingBar {
+            panel.orderFront(nil)
+            publishDebug(
+                expectedOrigin: panel.frame.origin,
+                anchorKind: "manual-dragging",
+                selectionRect: readingAnchorRect ?? selection?.rect
+            )
+            return
+        }
 
         if transitionedIntoReading {
             lockPlacementForReading(selection: selection, readingAnchorRect: readingAnchorRect)
@@ -86,6 +116,21 @@ final class FloatingBarController {
         placement = .trackingSelection
         if let selection {
             let signature = selectionSignature(for: selection)
+
+            if let manualOrigin, manualOriginSelectionSignature == signature {
+                lastSelectionSignature = signature
+                pendingUnlockAfterRead = false
+                resizePanelToContent(keepCenter: false, animated: false, fixedOrigin: manualOrigin)
+                panel.orderFront(nil)
+                stableSelectionOrigin = panel.frame.origin
+                publishDebug(
+                    expectedOrigin: panel.frame.origin,
+                    anchorKind: "manual-drag",
+                    selectionRect: selection.rect
+                )
+                return
+            }
+
             let shouldKeepCurrentPlacement = panel.isVisible && (signature == lastSelectionSignature || pendingUnlockAfterRead)
             lastSelectionSignature = signature
 
@@ -142,14 +187,29 @@ final class FloatingBarController {
     private func lockPlacementForReading(selection: SelectionSnapshot?, readingAnchorRect: CGRect?) {
         let anchor = readingAnchorRect ?? selection?.rect ?? lastAnchorRect
         lastAnchorRect = anchor ?? lastAnchorRect
+        let currentSelectionSignature: String? = {
+            guard let selection else { return nil }
+            return selectionSignature(for: selection)
+        }()
+        let manualOriginForSelection: CGPoint? = {
+            guard let currentSelectionSignature else { return nil }
+            guard manualOriginSelectionSignature == currentSelectionSignature else { return nil }
+            return manualOrigin
+        }()
 
         if !panel.isVisible {
-            showPanelAtSelectionRect(anchor)
+            if let manualOriginForSelection {
+                let startFrame = clampedFrame(CGRect(origin: manualOriginForSelection, size: panel.frame.size))
+                panel.setFrame(startFrame, display: false)
+                panel.orderFront(nil)
+            } else {
+                showPanelAtSelectionRect(anchor)
+            }
         }
 
         guard panel.isVisible else { return }
 
-        let stableOrigin = stableSelectionOrigin ?? panel.frame.origin
+        let stableOrigin = manualOriginForSelection ?? stableSelectionOrigin ?? panel.frame.origin
         resizePanelToContent(keepCenter: false, animated: false, fixedOrigin: stableOrigin)
         let lockedFrame = CGRect(origin: stableOrigin, size: panel.frame.size)
         stableSelectionOrigin = stableOrigin
@@ -229,6 +289,57 @@ final class FloatingBarController {
         return panel.frame.insetBy(dx: -extraPadding, dy: -extraPadding).contains(point)
     }
 
+    func shouldIgnoreGlobalMouseUp(point: CGPoint, extraPadding: CGFloat = 14) -> Bool {
+        if suppressNextOutsideMouseUp {
+            suppressNextOutsideMouseUp = false
+            return true
+        }
+
+        if isDraggingBar {
+            return true
+        }
+
+        return contains(point: point, extraPadding: extraPadding)
+    }
+
+    private func beginDrag() {
+        guard panel.isVisible else { return }
+        isDraggingBar = true
+        dragStartFrame = panel.frame
+    }
+
+    private func updateDrag(translation: CGSize) {
+        guard isDraggingBar, let dragStartFrame else { return }
+        var nextFrame = dragStartFrame
+        nextFrame.origin.x += translation.width
+        nextFrame.origin.y -= translation.height
+        nextFrame = clampedFrame(nextFrame)
+        panel.setFrame(nextFrame, display: true)
+        stableSelectionOrigin = nextFrame.origin
+        if case .lockedReading = placement {
+            placement = .lockedReading(frame: nextFrame)
+        }
+        publishDebug(
+            expectedOrigin: nextFrame.origin,
+            anchorKind: "manual-dragging",
+            selectionRect: appState.selection?.rect ?? appState.readingAnchorRect
+        )
+    }
+
+    private func endDrag() {
+        guard isDraggingBar else { return }
+        isDraggingBar = false
+        dragStartFrame = nil
+        manualOrigin = panel.frame.origin
+        if let selection = appState.selection {
+            manualOriginSelectionSignature = selectionSignature(for: selection)
+        } else {
+            manualOriginSelectionSignature = nil
+        }
+        suppressNextOutsideMouseUp = true
+        stableSelectionOrigin = panel.frame.origin
+    }
+
     private func clampedOrigin(for point: CGPoint, panelSize: CGSize) -> CGPoint {
         guard let screen = screenContaining(point: point) else {
             return point
@@ -279,6 +390,27 @@ final class FloatingBarController {
         let text = snapshot.text.trimmingCharacters(in: .whitespacesAndNewlines)
         // Rect often refines in a follow-up AX tick; keep signature text-based to prevent a second jump.
         return "\(snapshot.appName ?? "unknown")|\(text)"
+    }
+
+    private func syncManualPlacement(for selection: SelectionSnapshot?) {
+        guard let selection else {
+            clearManualPlacement()
+            return
+        }
+
+        guard let manualSignature = manualOriginSelectionSignature else {
+            return
+        }
+
+        let currentSignature = selectionSignature(for: selection)
+        if manualSignature != currentSignature {
+            clearManualPlacement()
+        }
+    }
+
+    private func clearManualPlacement() {
+        manualOrigin = nil
+        manualOriginSelectionSignature = nil
     }
 }
 
