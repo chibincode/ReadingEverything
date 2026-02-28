@@ -9,132 +9,209 @@ struct SettingsView: View {
     @State private var isTestingTTS = false
     @State private var showAdvancedProviderFields = false
     private let aiClient = AIClient()
+    private let customModelTag = "__custom_model__"
+    private let glmModelOptions = ["glm-4-flash-250414", "glm-4.5-flash", "glm-5-air"]
+    private let geminiModelOptions = ["gemini-3-flash-preview", "gemini-2.5-flash", "gemini-2.5-pro"]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            GroupBox(label: Text("Permissions")) {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack {
-                        StatusDot(isOn: accessibilityEnabled)
-                        Text("Accessibility")
-                        Spacer()
-                        Button("Request") {
-                            PermissionCenter.requestAccessibility()
-                            refreshPermissions()
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                GroupBox(label: Text("Permissions")) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            StatusDot(isOn: accessibilityEnabled)
+                            Text("Accessibility")
+                            Spacer()
+                            Button("Request") {
+                                PermissionCenter.requestAccessibility()
+                                refreshPermissions()
+                            }
+                            Button("Open Settings") {
+                                PermissionCenter.openPrivacySettings()
+                            }
                         }
-                        Button("Open Settings") {
-                            PermissionCenter.openPrivacySettings()
+                        HStack {
+                            StatusDot(isOn: inputMonitoringEnabled)
+                            Text("Input Monitoring")
+                            Spacer()
+                            Button("Check") {
+                                refreshPermissions()
+                            }
+                            Button("Open Settings") {
+                                PermissionCenter.openPrivacySettings()
+                            }
                         }
-                    }
-                    HStack {
-                        StatusDot(isOn: inputMonitoringEnabled)
-                        Text("Input Monitoring")
-                        Spacer()
-                        Button("Check") {
-                            refreshPermissions()
-                        }
-                        Button("Open Settings") {
-                            PermissionCenter.openPrivacySettings()
-                        }
-                    }
-                    Text("If hotkeys do not work, enable Input Monitoring.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(8)
-            }
-
-            GroupBox(label: Text("Hotkeys")) {
-                VStack(alignment: .leading, spacing: 12) {
-                    HotkeyRow(title: "Hover Read", combo: $settings.hotkeyBindings.hoverRead)
-                    HotkeyRow(title: "Read Selection", combo: $settings.hotkeyBindings.readSelection)
-                    HotkeyRow(title: "Grammar + Rephrase", combo: $settings.hotkeyBindings.grammar)
-                }
-                .padding(8)
-            }
-
-            GroupBox(label: Text("Debug")) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Toggle("Show detection overlay before reading", isOn: $settings.showDetectionOverlay)
-                    Toggle("Show floating bar offset debug", isOn: $settings.showFloatingBarOffsetDebug)
-                    Text("When enabled, a short-lived highlight box shows the detected read area (for internal testing).")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                    Text("Offset debug shows expected anchor vs actual bar frame and dx/dy.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(8)
-            }
-
-            GroupBox(label: Text("AI Provider")) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Toggle("Use AI TTS", isOn: $settings.useAITTS)
-                    Picker("Preset", selection: $settings.aiPreset) {
-                        ForEach(AIProviderPreset.allCases, id: \.self) { preset in
-                            Text(preset.title).tag(preset)
-                        }
-                    }
-                    .onChange(of: settings.aiPreset) { newPreset in
-                        applyPreset(newPreset)
-                        if newPreset == .doubaoOpenSpeech {
-                            normalizeOpenSpeechConfig()
-                        }
-                        showAdvancedProviderFields = (newPreset == .custom)
-                    }
-
-                    if settings.aiPreset != .custom {
-                        Toggle("Show advanced provider fields", isOn: $showAdvancedProviderFields)
-                    }
-
-                    if settings.aiPreset == .custom || showAdvancedProviderFields {
-                        labeledTextField("Base URL", text: $settings.aiConfig.baseURL, placeholder: baseURLPlaceholder)
-                    }
-                    if usesOpenSpeechFlow {
-                        labeledTextField("App ID", text: $settings.aiConfig.appID, placeholder: "App ID")
-                        if settings.aiPreset == .doubaoOpenSpeech {
-                            openSpeechResourcePicker
-                            openSpeechSpeakerPicker
-                        } else {
-                            labeledTextField("Resource ID", text: $settings.aiConfig.resourceID, placeholder: "Resource ID")
-                            labeledTextField("Speaker", text: $settings.aiConfig.voice, placeholder: "Speaker")
-                        }
-                    } else {
-                        labeledTextField("Model / Endpoint ID", text: $settings.aiConfig.model, placeholder: "Model / Endpoint ID")
-                        labeledTextField("Voice", text: $settings.aiConfig.voice, placeholder: "Voice")
-                    }
-                    labeledSecureField(usesOpenSpeechFlow ? "Access Key" : "API Key", text: $settings.aiConfig.apiKey, placeholder: apiKeyPlaceholder)
-                    if settings.aiPreset == .custom || showAdvancedProviderFields {
-                        Text("Headers JSON")
-                            .font(.caption)
+                        Text("If hotkeys do not work, enable Input Monitoring.")
+                            .font(.footnote)
                             .foregroundStyle(.secondary)
-                        TextEditor(text: $settings.aiConfig.headersJSON)
-                            .frame(height: 80)
-                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.gray.opacity(0.2)))
-                            .font(.system(size: 12))
                     }
-                    quickSetupNotes
-
-                    labeledTextField("TTS Test Text", text: $ttsTestText, placeholder: "TTS test text")
-                    HStack(spacing: 10) {
-                        Button(isTestingTTS ? "Testing..." : "Test AI TTS") {
-                            runTTSTest()
-                        }
-                        .disabled(isTestingTTS || !canRunTTSTest)
-                        if !ttsTestStatus.isEmpty {
-                            Text(ttsTestStatus)
-                                .font(.footnote)
-                                .foregroundStyle(ttsTestStatus.hasPrefix("Success") ? .green : .red)
-                                .lineLimit(2)
-                        }
-                    }
+                    .padding(8)
                 }
-                .padding(8)
-            }
 
-            Spacer()
+                GroupBox(label: Text("Hotkeys")) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HotkeyRow(title: "Read Selection", combo: $settings.hotkeyBindings.readSelection)
+                        HotkeyRow(title: "Translate", combo: $settings.hotkeyBindings.translation)
+                        HotkeyRow(title: "Grammar Check", combo: $settings.hotkeyBindings.grammar)
+                        Text("Matched hotkeys are intercepted and will not pass through to the target app.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(8)
+                }
+
+                GroupBox(label: Text("Grammar Provider")) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Picker("Preset", selection: grammarPresetBinding) {
+                            ForEach(GrammarProviderPreset.allCases, id: \.self) { preset in
+                                Text(preset.title).tag(preset)
+                            }
+                        }
+
+                        switch settings.grammarProviderPreset {
+                        case .glmDirect:
+                            grammarModelPicker(
+                                options: glmModelOptions,
+                                customPlaceholder: "glm-4-flash-250414"
+                            )
+                            labeledRevealableSecretField(
+                                "API Key",
+                                text: $settings.grammarConfig.apiKey,
+                                placeholder: "GLM API Key"
+                            )
+                            Text("Directly calls GLM Chat Completions endpoint: https://open.bigmodel.cn/api/paas/v4/chat/completions")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        case .geminiDirect:
+                            grammarModelPicker(
+                                options: geminiModelOptions,
+                                customPlaceholder: "gemini-3-flash-preview"
+                            )
+                            labeledRevealableSecretField(
+                                "API Key",
+                                text: $settings.grammarConfig.apiKey,
+                                placeholder: "Gemini API Key"
+                            )
+                            Text("Directly calls Gemini generateContent endpoint with JSON output.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        case .custom:
+                            labeledTextField(
+                                "Base URL",
+                                text: $settings.grammarConfig.baseURL,
+                                placeholder: "Custom backend URL"
+                            )
+                            labeledTextField(
+                                "Model / Endpoint ID",
+                                text: $settings.grammarConfig.model,
+                                placeholder: "Model / Endpoint ID"
+                            )
+                            labeledRevealableSecretField(
+                                "API Key",
+                                text: $settings.grammarConfig.apiKey,
+                                placeholder: "API Key"
+                            )
+                            Text("Headers JSON")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            TextEditor(text: $settings.grammarConfig.headersJSON)
+                                .frame(height: 80)
+                                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.gray.opacity(0.2)))
+                                .font(.system(size: 12))
+                            Text("Tries grammar_check first, then falls back to grammar_rephrase on compatible errors.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(8)
+                }
+
+                GroupBox(label: Text("Debug")) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Toggle("Show detection overlay before reading", isOn: $settings.showDetectionOverlay)
+                        Toggle("Show floating bar offset debug", isOn: $settings.showFloatingBarOffsetDebug)
+                        Text("When enabled, a short-lived highlight box shows the detected read area (for internal testing).")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Text("Offset debug shows expected anchor vs actual bar frame and dx/dy.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(8)
+                }
+
+                GroupBox(label: Text("AI Provider (TTS)")) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Toggle("Use AI TTS", isOn: $settings.useAITTS)
+                        Picker("Preset", selection: $settings.aiPreset) {
+                            ForEach(AIProviderPreset.allCases, id: \.self) { preset in
+                                Text(preset.title).tag(preset)
+                            }
+                        }
+                        .onChange(of: settings.aiPreset) { newPreset in
+                            applyPreset(newPreset)
+                            if newPreset == .doubaoOpenSpeech {
+                                normalizeOpenSpeechConfig()
+                            }
+                            showAdvancedProviderFields = (newPreset == .custom)
+                        }
+
+                        if settings.aiPreset != .custom {
+                            Toggle("Show advanced provider fields", isOn: $showAdvancedProviderFields)
+                        }
+
+                        if settings.aiPreset == .custom || showAdvancedProviderFields {
+                            labeledTextField("Base URL", text: $settings.aiConfig.baseURL, placeholder: baseURLPlaceholder)
+                        }
+                        if usesOpenSpeechFlow {
+                            labeledTextField("App ID", text: $settings.aiConfig.appID, placeholder: "App ID")
+                            if settings.aiPreset == .doubaoOpenSpeech {
+                                openSpeechResourcePicker
+                                openSpeechSpeakerPicker
+                            } else {
+                                labeledTextField("Resource ID", text: $settings.aiConfig.resourceID, placeholder: "Resource ID")
+                                labeledTextField("Speaker", text: $settings.aiConfig.voice, placeholder: "Speaker")
+                            }
+                        } else {
+                            labeledTextField("Model / Endpoint ID", text: $settings.aiConfig.model, placeholder: "Model / Endpoint ID")
+                            labeledTextField("Voice", text: $settings.aiConfig.voice, placeholder: "Voice")
+                        }
+                        labeledRevealableSecretField(
+                            usesOpenSpeechFlow ? "Access Key" : "API Key",
+                            text: $settings.aiConfig.apiKey,
+                            placeholder: apiKeyPlaceholder
+                        )
+                        if settings.aiPreset == .custom || showAdvancedProviderFields {
+                            Text("Headers JSON")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            TextEditor(text: $settings.aiConfig.headersJSON)
+                                .frame(height: 80)
+                                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.gray.opacity(0.2)))
+                                .font(.system(size: 12))
+                        }
+                        quickSetupNotes
+
+                        labeledTextField("TTS Test Text", text: $ttsTestText, placeholder: "TTS test text")
+                        HStack(spacing: 10) {
+                            Button(isTestingTTS ? "Testing..." : "Test AI TTS") {
+                                runTTSTest()
+                            }
+                            .disabled(isTestingTTS || !canRunTTSTest)
+                            if !ttsTestStatus.isEmpty {
+                                Text(ttsTestStatus)
+                                    .font(.footnote)
+                                    .foregroundStyle(ttsTestStatus.hasPrefix("Success") ? .green : .red)
+                                    .lineLimit(2)
+                            }
+                        }
+                    }
+                    .padding(8)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(20)
         }
-        .padding(20)
         .onAppear {
             refreshPermissions()
             showAdvancedProviderFields = (settings.aiPreset == .custom)
@@ -144,12 +221,81 @@ struct SettingsView: View {
             if settings.aiPreset == .doubaoOpenSpeech {
                 normalizeOpenSpeechConfig()
             }
+            ensureDefaultGrammarModel(for: settings.grammarProviderPreset)
         }
     }
 
     private func refreshPermissions() {
         accessibilityEnabled = PermissionCenter.accessibilityEnabled
         inputMonitoringEnabled = PermissionCenter.inputMonitoringEnabled
+    }
+
+    private var grammarPresetBinding: Binding<GrammarProviderPreset> {
+        Binding(
+            get: { settings.grammarProviderPreset },
+            set: { newPreset in
+                settings.switchGrammarProviderPreset(to: newPreset)
+                ensureDefaultGrammarModel(for: newPreset)
+            }
+        )
+    }
+
+    private func grammarModelSelectionBinding(options: [String]) -> Binding<String> {
+        Binding(
+            get: {
+                let trimmed = settings.grammarConfig.model.trimmingCharacters(in: .whitespacesAndNewlines)
+                if options.contains(trimmed) {
+                    return trimmed
+                }
+                return customModelTag
+            },
+            set: { selected in
+                let current = settings.grammarConfig.model.trimmingCharacters(in: .whitespacesAndNewlines)
+                if selected == customModelTag {
+                    if options.contains(current) {
+                        settings.grammarConfig.model = ""
+                    }
+                    return
+                }
+                settings.grammarConfig.model = selected
+            }
+        )
+    }
+
+    private func grammarModelPicker(options: [String], customPlaceholder: String) -> some View {
+        let selection = grammarModelSelectionBinding(options: options)
+        let useCustomInput = selection.wrappedValue == customModelTag
+
+        return Group {
+            Text("Model")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Picker("Model", selection: selection) {
+                ForEach(options, id: \.self) { model in
+                    Text(model).tag(model)
+                }
+                Text("Custom...").tag(customModelTag)
+            }
+            .pickerStyle(.menu)
+
+            if useCustomInput {
+                TextField(customPlaceholder, text: $settings.grammarConfig.model)
+            }
+        }
+    }
+
+    private func ensureDefaultGrammarModel(for preset: GrammarProviderPreset) {
+        let trimmed = settings.grammarConfig.model.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.isEmpty else { return }
+
+        switch preset {
+        case .glmDirect:
+            settings.grammarConfig.model = "glm-4-flash-250414"
+        case .geminiDirect:
+            settings.grammarConfig.model = "gemini-3-flash-preview"
+        case .custom:
+            break
+        }
     }
 
     private var usesOpenSpeechFlow: Bool {
@@ -408,6 +554,13 @@ struct SettingsView: View {
                     return "HTTP 401: Ark auth failed. Check Ark API Key and endpoint region."
                 }
                 return "HTTP \(code)"
+            case .timeout:
+                return "Request timed out after 20s."
+            case .cancelled:
+                return "Request cancelled."
+            case let .network(message):
+                let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+                return trimmed.isEmpty ? "Network error." : "Network error: \(trimmed)"
             }
         }
         let message = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -423,11 +576,37 @@ struct SettingsView: View {
     }
 
     @ViewBuilder
-    private func labeledSecureField(_ label: String, text: Binding<String>, placeholder: String) -> some View {
+    private func labeledRevealableSecretField(
+        _ label: String,
+        text: Binding<String>,
+        placeholder: String
+    ) -> some View {
         Text(label)
             .font(.caption)
             .foregroundStyle(.secondary)
-        SecureField(placeholder, text: text)
+        RevealableSecretField(placeholder: placeholder, text: text)
+    }
+}
+
+private struct RevealableSecretField: View {
+    let placeholder: String
+    @Binding var text: String
+    @State private var isRevealed = false
+
+    var body: some View {
+        HStack(spacing: 10) {
+            if isRevealed {
+                TextField(placeholder, text: $text)
+            } else {
+                SecureField(placeholder, text: $text)
+            }
+
+            Button(isRevealed ? "Hide" : "Show") {
+                isRevealed.toggle()
+            }
+            .buttonStyle(.borderless)
+            .font(.system(size: 12, weight: .medium))
+        }
     }
 }
 

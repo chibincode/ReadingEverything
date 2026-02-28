@@ -24,11 +24,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         toastController = ToastController(appState: appState)
         detectionOverlayController = DetectionOverlayController(appState: appState)
         settingsWindowController = SettingsWindowController()
+        appState.openSettings = { [weak self] in
+            self?.openSettings()
+        }
         appState.shouldIgnoreMouseUp = { [weak floatingBarController, weak resultPanelController] point in
             if let floatingBarController, floatingBarController.shouldIgnoreGlobalMouseUp(point: point) {
                 return true
             }
-            if let resultPanelController, resultPanelController.contains(point: point) {
+            if let resultPanelController, resultPanelController.shouldIgnoreGlobalMouseUp(point: point) {
                 return true
             }
             return false

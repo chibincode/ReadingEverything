@@ -19,14 +19,15 @@
 		79317DE23F0749D0B7D52B20 /* ToastController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B70A3A4419F4FE020864D39 /* ToastController.swift */; };
 		7D1AFCC4F14A3E3E04D42F8A /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6428DA8099F4EFBACEA67C /* HotkeyManager.swift */; };
 		81FB339258E4D27EB0D1CB7C /* ResultPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55E1DB7E9E779F6BEE9CD564 /* ResultPopoverView.swift */; };
-		9136682575250DEF91799E27 /* HoverTextFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A518F32CF21449273D7CEE9D /* HoverTextFetcher.swift */; };
 		922CE1E6AF41E3A2517EE5BB /* FloatingBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425FEEAA4E2FE981B29EE11B /* FloatingBarView.swift */; };
 		9EF307590D273E34F98DFF7E /* AIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF9C1E2A8A3C0ED16BFE1684 /* AIClient.swift */; };
 		A80270815FE85DF2FBDAA35A /* PermissionCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86D3748421599E3E9C8FE21D /* PermissionCenter.swift */; };
-		BD47D5552C7F47E8E80E952E /* HotkeyRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2ACAF127972D33E5901A19B /* HotkeyRecorderView.swift */; };
 		B13F8E9A7D4C4B21A56E9031 /* DetectionOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C24A7D6E5F3B4C19A8D207E4 /* DetectionOverlayController.swift */; };
+		BD47D5552C7F47E8E80E952E /* HotkeyRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2ACAF127972D33E5901A19B /* HotkeyRecorderView.swift */; };
 		CA0FA5F6B8A880627DF7FFE0 /* AccessibilityHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A0DF3DBE4D58FED8A728E7E /* AccessibilityHelpers.swift */; };
 		D37DC2C9A7A5236BB4734865 /* FloatingBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7B2C1D0E2ADCD93C0A5EB2 /* FloatingBarController.swift */; };
+		E1A9B4C2D3F50718293A4B6C /* GrammarDiffRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B2C3D4E5A60718293A4B6C /* GrammarDiffRenderer.swift */; };
+		E1A9B4C2D3F50718293A4B6D /* PanelDragHandleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B2C3D4E5A60718293A4B6D /* PanelDragHandleView.swift */; };
 		F73BB387D080589AB054C240 /* SpeechManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4F2222D3B41A3DBD199B364 /* SpeechManager.swift */; };
 		F78DF0CAC5E40C02D4E518CA /* EnglishPracticeAssistantApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C462DDAED16DC0CF0B9CD7 /* EnglishPracticeAssistantApp.swift */; };
 		F893697B590481194F309FFE /* SelectionMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 297C79BFBDABE898736A3566 /* SelectionMonitor.swift */; };
@@ -48,16 +49,17 @@
 		86D3748421599E3E9C8FE21D /* PermissionCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PermissionCenter.swift; path = Accessibility/PermissionCenter.swift; sourceTree = "<group>"; };
 		9CDA1A2A3C984A24B9C429CA /* ResultPanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ResultPanelController.swift; path = UI/ResultPanelController.swift; sourceTree = "<group>"; };
 		A3E247CB2C083EB8CB37F0A7 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = KeychainStore.swift; path = Models/KeychainStore.swift; sourceTree = "<group>"; };
-		A518F32CF21449273D7CEE9D /* HoverTextFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HoverTextFetcher.swift; path = Accessibility/HoverTextFetcher.swift; sourceTree = "<group>"; };
 		B4F2222D3B41A3DBD199B364 /* SpeechManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SpeechManager.swift; path = TTS/SpeechManager.swift; sourceTree = "<group>"; };
 		B9D8E96CF37CB990C801F97B /* KeyCombo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = KeyCombo.swift; path = Models/KeyCombo.swift; sourceTree = "<group>"; };
-		C2ACAF127972D33E5901A19B /* HotkeyRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HotkeyRecorderView.swift; path = Hotkeys/HotkeyRecorderView.swift; sourceTree = "<group>"; };
 		C24A7D6E5F3B4C19A8D207E4 /* DetectionOverlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DetectionOverlayController.swift; path = UI/DetectionOverlayController.swift; sourceTree = "<group>"; };
+		C2ACAF127972D33E5901A19B /* HotkeyRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HotkeyRecorderView.swift; path = Hotkeys/HotkeyRecorderView.swift; sourceTree = "<group>"; };
 		C59C0996DAEEE6F529A27976 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = EnglishPracticeAssistantApp/Info.plist; sourceTree = "<group>"; };
 		CBEE3772A077021721A278F6 /* EnglishPracticeAssistant.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = EnglishPracticeAssistant.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CF1CB80B2B73A41BA5EF542E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsView.swift; path = UI/SettingsView.swift; sourceTree = "<group>"; };
 		D32FEB3E719E01FCD3FE22A4 /* SelectionSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SelectionSnapshot.swift; path = Models/SelectionSnapshot.swift; sourceTree = "<group>"; };
 		DF9C1E2A8A3C0ED16BFE1684 /* AIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AIClient.swift; path = AI/AIClient.swift; sourceTree = "<group>"; };
+		F1B2C3D4E5A60718293A4B6C /* GrammarDiffRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GrammarDiffRenderer.swift; path = UI/GrammarDiffRenderer.swift; sourceTree = "<group>"; };
+		F1B2C3D4E5A60718293A4B6D /* PanelDragHandleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PanelDragHandleView.swift; path = UI/PanelDragHandleView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,7 +89,6 @@
 				6EAAC8D82F01B7210760474F /* AppDelegate.swift */,
 				2A0DF3DBE4D58FED8A728E7E /* AccessibilityHelpers.swift */,
 				297C79BFBDABE898736A3566 /* SelectionMonitor.swift */,
-				A518F32CF21449273D7CEE9D /* HoverTextFetcher.swift */,
 				86D3748421599E3E9C8FE21D /* PermissionCenter.swift */,
 				DF9C1E2A8A3C0ED16BFE1684 /* AIClient.swift */,
 				4C6428DA8099F4EFBACEA67C /* HotkeyManager.swift */,
@@ -98,6 +99,8 @@
 				D32FEB3E719E01FCD3FE22A4 /* SelectionSnapshot.swift */,
 				B4F2222D3B41A3DBD199B364 /* SpeechManager.swift */,
 				26CDEA5B9A2145128EDFED86 /* VisualEffectView.swift */,
+				F1B2C3D4E5A60718293A4B6C /* GrammarDiffRenderer.swift */,
+				F1B2C3D4E5A60718293A4B6D /* PanelDragHandleView.swift */,
 				4C7B2C1D0E2ADCD93C0A5EB2 /* FloatingBarController.swift */,
 				425FEEAA4E2FE981B29EE11B /* FloatingBarView.swift */,
 				C24A7D6E5F3B4C19A8D207E4 /* DetectionOverlayController.swift */,
@@ -223,7 +226,6 @@
 				36E8B5359309CC6273931BDB /* AppDelegate.swift in Sources */,
 				CA0FA5F6B8A880627DF7FFE0 /* AccessibilityHelpers.swift in Sources */,
 				F893697B590481194F309FFE /* SelectionMonitor.swift in Sources */,
-				9136682575250DEF91799E27 /* HoverTextFetcher.swift in Sources */,
 				A80270815FE85DF2FBDAA35A /* PermissionCenter.swift in Sources */,
 				9EF307590D273E34F98DFF7E /* AIClient.swift in Sources */,
 				7D1AFCC4F14A3E3E04D42F8A /* HotkeyManager.swift in Sources */,
@@ -234,6 +236,8 @@
 				248AC9ED336DE7DAECD3ADA8 /* SelectionSnapshot.swift in Sources */,
 				F73BB387D080589AB054C240 /* SpeechManager.swift in Sources */,
 				3BD39F917C10696489A30FD5 /* VisualEffectView.swift in Sources */,
+				E1A9B4C2D3F50718293A4B6C /* GrammarDiffRenderer.swift in Sources */,
+				E1A9B4C2D3F50718293A4B6D /* PanelDragHandleView.swift in Sources */,
 				D37DC2C9A7A5236BB4734865 /* FloatingBarController.swift in Sources */,
 				922CE1E6AF41E3A2517EE5BB /* FloatingBarView.swift in Sources */,
 				B13F8E9A7D4C4B21A56E9031 /* DetectionOverlayController.swift in Sources */,
@@ -302,12 +306,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CONFIGURATION_BUILD_DIR = "$(HOME)/Library/Developer/Xcode/DerivedData/EnglishPracticeAssistantBuild/Build/Products/$(CONFIGURATION)";
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 7K5A436J7B;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = EnglishPracticeAssistantApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -325,6 +330,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CONFIGURATION_BUILD_DIR = "$(HOME)/Library/Developer/Xcode/DerivedData/EnglishPracticeAssistantBuild/Build/Products/$(CONFIGURATION)";
 				DEAD_CODE_STRIPPING = YES;

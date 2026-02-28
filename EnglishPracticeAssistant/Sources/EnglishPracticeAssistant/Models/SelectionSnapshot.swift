@@ -9,18 +9,9 @@ struct SelectionSnapshot: Equatable {
 
 enum ReadSource: String, Equatable {
     case selection
-    case hoverRange
-    case hoverFallback
 
     var debugLabel: String {
-        switch self {
-        case .selection:
-            return "selection"
-        case .hoverRange:
-            return "hover-range"
-        case .hoverFallback:
-            return "hover-fallback"
-        }
+        "selection"
     }
 }
 
@@ -46,8 +37,53 @@ struct FloatingBarDebugInfo: Equatable {
     var deltaY: CGFloat { actualFrame.origin.y - expectedOrigin.y }
 }
 
-struct GrammarResult: Equatable {
-    let corrected: String
-    let rephrased: String
+enum GrammarOption: String, CaseIterable, Equatable, Hashable {
+    case cleanUp
+    case betterFlow
+    case concise
+
+    var title: String {
+        switch self {
+        case .cleanUp:
+            return "Clean Up"
+        case .betterFlow:
+            return "Better Flow"
+        case .concise:
+            return "Concise"
+        }
+    }
+}
+
+struct GrammarCheckResult: Equatable {
+    let sourceText: String
+    let cleanUp: String
+    let betterFlow: String
+    let concise: String
     let notes: String
+    let usedLegacyFallback: Bool
+
+    func text(for option: GrammarOption) -> String {
+        switch option {
+        case .cleanUp:
+            return cleanUp
+        case .betterFlow:
+            return betterFlow
+        case .concise:
+            return concise
+        }
+    }
+}
+
+enum ResultPanelKind: Equatable {
+    case grammar
+    case translation
+}
+
+struct TranslationResult: Equatable {
+    let sourceText: String
+    let translatedText: String
+    let detectedSourceLanguage: String
+    let targetLanguage: String
+    let notes: String
+    let usedLegacyFallback: Bool
 }

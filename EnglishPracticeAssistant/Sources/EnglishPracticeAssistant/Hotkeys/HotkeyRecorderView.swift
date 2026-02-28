@@ -5,14 +5,23 @@ struct HotkeyRecorderView: View {
     @Binding var combo: KeyCombo
     @State private var isRecording = false
     @State private var monitor: Any?
+    @State private var recordingHint: String?
+    private let modifierOnlyKeyCodes: Set<UInt16> = [54, 55, 56, 58, 59, 60, 61, 62]
 
     var body: some View {
-        HStack {
-            Text(combo.displayString.isEmpty ? "None" : combo.displayString)
-                .font(.system(size: 12, weight: .medium))
-                .frame(minWidth: 120, alignment: .leading)
-            Button(isRecording ? "Press keys…" : "Record") {
-                toggleRecording()
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(combo.displayString.isEmpty ? "None" : combo.displayString)
+                    .font(.system(size: 12, weight: .medium))
+                    .frame(minWidth: 120, alignment: .leading)
+                Button(isRecording ? "Press keys…" : "Record") {
+                    toggleRecording()
+                }
+            }
+            if let recordingHint, !recordingHint.isEmpty {
+                Text(recordingHint)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
             }
         }
         .onDisappear {
@@ -30,19 +39,27 @@ struct HotkeyRecorderView: View {
 
     private func startRecording() {
         isRecording = true
-        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .flagsChanged]) { event in
-            if event.type == .flagsChanged {
-                if let modifierCombo = KeyCombo.fromFlagsChanged(event) {
-                    combo = modifierCombo
-                    stopRecording()
-                    return nil
-                }
-                return event
+        recordingHint = "Press modifier + key"
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { event in
+            if event.keyCode == 53 {
+                recordingHint = nil
+                stopRecording()
+                return nil
             }
 
             let flags = event.modifierFlags.intersection(.relevant)
+            guard !flags.isEmpty else {
+                recordingHint = "Use modifier + key, e.g. Ctrl+R"
+                return nil
+            }
+            guard !modifierOnlyKeyCodes.contains(event.keyCode) else {
+                recordingHint = "Modifier-only hotkeys are not allowed"
+                return nil
+            }
+
             let newCombo = KeyCombo(keyCode: event.keyCode, modifiers: flags)
             combo = newCombo
+            recordingHint = nil
             stopRecording()
             return nil
         }
@@ -50,28 +67,10 @@ struct HotkeyRecorderView: View {
 
     private func stopRecording() {
         isRecording = false
+        recordingHint = nil
         if let monitor {
             NSEvent.removeMonitor(monitor)
             self.monitor = nil
         }
-    }
-}
-
-extension KeyCombo {
-    static func fromFlagsChanged(_ event: NSEvent) -> KeyCombo? {
-        let flags = event.modifierFlags.intersection(.relevant)
-        if flags.contains(.control) && event.keyCode == 59 {
-            return KeyCombo.modifierOnly(.control)
-        }
-        if flags.contains(.option) && event.keyCode == 58 {
-            return KeyCombo.modifierOnly(.option)
-        }
-        if flags.contains(.shift) && event.keyCode == 56 {
-            return KeyCombo.modifierOnly(.shift)
-        }
-        if flags.contains(.command) && event.keyCode == 55 {
-            return KeyCombo.modifierOnly(.command)
-        }
-        return nil
     }
 }

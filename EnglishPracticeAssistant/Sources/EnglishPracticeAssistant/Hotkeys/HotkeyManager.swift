@@ -2,113 +2,154 @@ import Cocoa
 import Foundation
 
 final class HotkeyManager {
-    var onHoverRead: (() -> Void)?
     var onReadSelection: (() -> Void)?
-    var onGrammar: (() -> Void)?
+    var onTranslate: (() -> Void)?
+    var onGrammarCheck: (() -> Void)?
     var onMouseUp: ((CGPoint) -> Void)?
     var onStopReading: (() -> Void)?
+    var canStopReading: (() -> Bool)?
+    var onHotkeySystemUnavailable: ((String) -> Void)?
+    var onHotkeySystemRecovered: (() -> Void)?
 
     private var bindings: HotkeyBindings
     private var eventTap: CFMachPort?
     private var lastTrigger = [String: Date]()
-    private var lastHoverModifierDown = false
+    private var retryTimer: Timer?
+    private var lastAvailabilityMessage: String?
+    private(set) var isEventTapReady = false
 
     init() {
-        bindings = HotkeyBindings(
-            hoverRead: KeyCombo.modifierOnly(.control),
-            readSelection: KeyCombo(keyCode: 15, modifiers: [.option]),
-            grammar: KeyCombo(keyCode: 5, modifiers: [.option])
-        )
+        bindings = .defaultBindings
+    }
+
+    deinit {
+        retryTimer?.invalidate()
     }
 
     func start(bindings: HotkeyBindings) {
         self.bindings = bindings
-        installEventTap()
+        ensureEventTapInstalled()
     }
 
     func update(bindings: HotkeyBindings) {
         self.bindings = bindings
+        ensureEventTapInstalled()
     }
 
-    private func installEventTap() {
-        guard eventTap == nil else { return }
+    func ensureEventTapInstalled() {
+        if let existingTap = eventTap {
+            if !CGEvent.tapIsEnabled(tap: existingTap) {
+                CGEvent.tapEnable(tap: existingTap, enable: true)
+            }
+
+            if CGEvent.tapIsEnabled(tap: existingTap) {
+                markHotkeyReady()
+            } else {
+                markHotkeyUnavailable(reason: hotkeyUnavailableReason())
+                scheduleRetry()
+            }
+            return
+        }
+
         let mask = (1 << CGEventType.keyDown.rawValue)
-            | (1 << CGEventType.flagsChanged.rawValue)
             | (1 << CGEventType.leftMouseUp.rawValue)
-        eventTap = CGEvent.tapCreate(
+        guard let createdTap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
             place: .headInsertEventTap,
             options: .defaultTap,
             eventsOfInterest: CGEventMask(mask),
             callback: eventCallback,
             userInfo: Unmanaged.passUnretained(self).toOpaque()
-        )
+        ) else {
+            markHotkeyUnavailable(reason: hotkeyUnavailableReason())
+            scheduleRetry()
+            return
+        }
 
-        guard let eventTap else { return }
-        let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
+        eventTap = createdTap
+        let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, createdTap, 0)
         CFRunLoopAddSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
-        CGEvent.tapEnable(tap: eventTap, enable: true)
+        CGEvent.tapEnable(tap: createdTap, enable: true)
+        markHotkeyReady()
     }
 
-    func handle(event: CGEvent, type: CGEventType) {
+    private func markHotkeyUnavailable(reason: String) {
+        isEventTapReady = false
+        if lastAvailabilityMessage != reason {
+            lastAvailabilityMessage = reason
+            onHotkeySystemUnavailable?(reason)
+        }
+    }
+
+    private func markHotkeyReady() {
+        let shouldNotifyRecovery = !isEventTapReady || lastAvailabilityMessage != nil
+        isEventTapReady = true
+        retryTimer?.invalidate()
+        retryTimer = nil
+        lastAvailabilityMessage = nil
+        if shouldNotifyRecovery {
+            onHotkeySystemRecovered?()
+        }
+    }
+
+    private func scheduleRetry() {
+        guard retryTimer == nil else { return }
+        retryTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+            self?.ensureEventTapInstalled()
+        }
+        retryTimer?.tolerance = 0.5
+    }
+
+    private func hotkeyUnavailableReason() -> String {
+        if !PermissionCenter.inputMonitoringEnabled {
+            return "Hotkeys unavailable. Enable Input Monitoring in Settings."
+        }
+        return "Hotkeys unavailable. Failed to install event tap."
+    }
+
+    func handle(event: CGEvent, type: CGEventType) -> Bool {
         switch type {
         case .keyDown:
-            handleKeyDown(event)
-        case .flagsChanged:
-            handleFlagsChanged(event)
+            return handleKeyDown(event)
         case .leftMouseUp:
             // Use AppKit's global coordinate space for UI anchoring.
             let point = NSEvent.mouseLocation
             trigger(key: "mouseUp") { [weak self] in self?.onMouseUp?(point) }
+            return false
         case .tapDisabledByTimeout, .tapDisabledByUserInput:
             // Keep the tap alive if the system temporarily disables it.
             if let eventTap {
                 CGEvent.tapEnable(tap: eventTap, enable: true)
+                markHotkeyReady()
             }
+            return false
         default:
-            break
+            return false
         }
     }
 
-    private func handleKeyDown(_ event: CGEvent) {
+    private func handleKeyDown(_ event: CGEvent) -> Bool {
         let keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
         let flags = NSEvent.ModifierFlags(rawValue: UInt(event.flags.rawValue)).intersection(.relevant)
 
         if keyCode == 53 {
+            if canStopReading?() == false {
+                return false
+            }
             trigger(key: "stopReading") { [weak self] in self?.onStopReading?() }
-        } else if matches(combo: bindings.readSelection, keyCode: keyCode, flags: flags) {
+            return true
+        }
+        if matches(combo: bindings.readSelection, keyCode: keyCode, flags: flags) {
             trigger(key: "readSelection") { [weak self] in self?.onReadSelection?() }
-        } else if matches(combo: bindings.grammar, keyCode: keyCode, flags: flags) {
-            trigger(key: "grammar") { [weak self] in self?.onGrammar?() }
+            return true
         }
-    }
-
-    private func handleFlagsChanged(_ event: CGEvent) {
-        let flags = NSEvent.ModifierFlags(rawValue: UInt(event.flags.rawValue)).intersection(.relevant)
-        let hoverModifier = bindings.hoverRead.modifierFlags.intersection(.relevant)
-        guard !hoverModifier.isEmpty else { return }
-        let isHoverModifierDown = flags.contains(hoverModifier)
-        let keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
-        let isModifierPressEvent = isModifierKeyEvent(keyCode: keyCode, for: hoverModifier)
-
-        if bindings.hoverRead.isModifierOnly && isHoverModifierDown && (isModifierPressEvent || !lastHoverModifierDown) {
-            trigger(key: "hoverRead") { [weak self] in self?.onHoverRead?() }
+        if matches(combo: bindings.translation, keyCode: keyCode, flags: flags) {
+            trigger(key: "translation") { [weak self] in self?.onTranslate?() }
+            return true
         }
-        lastHoverModifierDown = isHoverModifierDown
-    }
-
-    private func isModifierKeyEvent(keyCode: UInt16, for modifiers: NSEvent.ModifierFlags) -> Bool {
-        if modifiers == .control {
-            return keyCode == 59 || keyCode == 62
-        }
-        if modifiers == .option {
-            return keyCode == 58 || keyCode == 61
-        }
-        if modifiers == .shift {
-            return keyCode == 56 || keyCode == 60
-        }
-        if modifiers == .command {
-            return keyCode == 55 || keyCode == 54
+        if matches(combo: bindings.grammar, keyCode: keyCode, flags: flags) {
+            trigger(key: "grammarCheck") { [weak self] in self?.onGrammarCheck?() }
+            return true
         }
         return false
     }
@@ -133,6 +174,9 @@ final class HotkeyManager {
 private let eventCallback: CGEventTapCallBack = { _, type, event, refcon in
     guard let refcon else { return Unmanaged.passUnretained(event) }
     let manager = Unmanaged<HotkeyManager>.fromOpaque(refcon).takeUnretainedValue()
-    manager.handle(event: event, type: type)
+    let consumed = manager.handle(event: event, type: type)
+    if consumed {
+        return nil
+    }
     return Unmanaged.passUnretained(event)
 }

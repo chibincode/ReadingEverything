@@ -70,8 +70,8 @@ final class SelectionMonitor: NSObject {
     private func startPolling() {
         pollTimer?.invalidate()
         pollTimer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                guard let self else { return }
+            guard let self else { return }
+            Task { @MainActor [self] in
                 self.refreshObservedAppIfNeeded()
                 self.fetchSelection()
             }

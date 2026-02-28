@@ -16,6 +16,7 @@ final class FloatingBarController {
     private var stableSelectionOrigin: CGPoint?
     private var isDraggingBar = false
     private var dragStartFrame: CGRect?
+    private var dragStartMouseLocation: CGPoint?
     private var manualOrigin: CGPoint?
     private var manualOriginSelectionSignature: String?
     private var suppressNextOutsideMouseUp = false
@@ -27,14 +28,14 @@ final class FloatingBarController {
             rootView: FloatingBarView(
                 appState: appState,
                 onDragStart: {},
-                onDragChanged: { _ in },
+                onDragChanged: {},
                 onDragEnd: {}
             )
         )
         hostingView.rootView = FloatingBarView(
             appState: appState,
             onDragStart: { [weak self] in self?.beginDrag() },
-            onDragChanged: { [weak self] translation in self?.updateDrag(translation: translation) },
+            onDragChanged: { [weak self] in self?.updateDrag() },
             onDragEnd: { [weak self] in self?.endDrag() }
         )
         panel.contentView = hostingView
@@ -306,13 +307,18 @@ final class FloatingBarController {
         guard panel.isVisible else { return }
         isDraggingBar = true
         dragStartFrame = panel.frame
+        dragStartMouseLocation = NSEvent.mouseLocation
     }
 
-    private func updateDrag(translation: CGSize) {
-        guard isDraggingBar, let dragStartFrame else { return }
+    private func updateDrag() {
+        guard isDraggingBar, let dragStartFrame, let dragStartMouseLocation else { return }
+        let currentMouseLocation = NSEvent.mouseLocation
+        let deltaX = currentMouseLocation.x - dragStartMouseLocation.x
+        let deltaY = currentMouseLocation.y - dragStartMouseLocation.y
+
         var nextFrame = dragStartFrame
-        nextFrame.origin.x += translation.width
-        nextFrame.origin.y -= translation.height
+        nextFrame.origin.x += deltaX
+        nextFrame.origin.y += deltaY
         nextFrame = clampedFrame(nextFrame)
         panel.setFrame(nextFrame, display: true)
         stableSelectionOrigin = nextFrame.origin
@@ -330,6 +336,7 @@ final class FloatingBarController {
         guard isDraggingBar else { return }
         isDraggingBar = false
         dragStartFrame = nil
+        dragStartMouseLocation = nil
         manualOrigin = panel.frame.origin
         if let selection = appState.selection {
             manualOriginSelectionSignature = selectionSignature(for: selection)

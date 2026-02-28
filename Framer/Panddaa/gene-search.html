@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>石湾陶艺文化基因图谱 - 基因检索</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-wrap">
+      <header class="container">
+        <nav class="top-nav">
+          <a href="./index.html">主页</a>
+          <a class="active" href="./gene-search.html">基因检索</a>
+          <a href="./heritage.html">非遗介绍</a>
+          <a href="#">传承人</a>
+        </nav>
+      </header>
+
+      <main class="container">
+        <section class="panel">
+          <div class="filters">
+            <select>
+              <option>显性基因</option>
+              <option>隐性基因</option>
+            </select>
+            <select>
+              <option>造型特征</option>
+              <option>器物比例</option>
+            </select>
+            <select>
+              <option>人物造型</option>
+              <option>生肖造型</option>
+            </select>
+            <select>
+              <option>脸型</option>
+              <option>圆脸</option>
+              <option>方脸</option>
+            </select>
+            <input type="text" placeholder="基因名称" />
+            <input type="text" placeholder="基因代码" />
+            <button type="button">搜索</button>
+          </div>
+
+          <div class="result-head">
+            <strong>文物名称</strong>
+            <span>时代</span>
+            <span>分类</span>
+            <span>窑口</span>
+          </div>
+
+          <ul class="result-list">
+            <li class="result-item">
+              <div>财势如牛</div>
+              <div>新石器时代</div>
+              <div>生肖雕塑</div>
+              <div>石湾窑 <button type="button" data-open-detail>查看详情</button></div>
+            </li>
+            <li class="result-item">
+              <div>龙门呈瑞</div>
+              <div>唐代</div>
+              <div>民俗题材</div>
+              <div>石湾窑 <button type="button" data-open-detail>查看详情</button></div>
+            </li>
+            <li class="result-item">
+              <div>齐天献瑞</div>
+              <div>宋代</div>
+              <div>人物造像</div>
+              <div>石湾窑 <button type="button" data-open-detail>查看详情</button></div>
+            </li>
+            <li class="result-item">
+              <div>大汉风骨</div>
+              <div>汉代</div>
+              <div>历史题材</div>
+              <div>石湾窑 <button type="button" data-open-detail>查看详情</button></div>
+            </li>
+          </ul>
+
+          <p class="hint">默认先展示生肖里的虎（可通过筛选条件进一步收敛）</p>
+        </section>
+      </main>
+
+      <div class="modal" id="detail-modal" aria-hidden="true">
+        <div class="modal-card">
+          <div class="modal-image">
+            <div class="img-placeholder">财势如牛</div>
+          </div>
+          <aside class="modal-info">
+            <div class="modal-top">
+              <h2 style="margin: 0; font-size: 46px">财势如牛</h2>
+              <button class="icon-btn" type="button" data-close-detail>关闭</button>
+            </div>
+
+            <div>
+              <span class="tag">色彩：陶黄 XS0004</span>
+              <span class="tag">造型特征：牛 XZ2302</span>
+              <span class="tag">类别：生肖</span>
+              <span class="tag">设计解读</span>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 10px">类似图片推荐</h3>
+            <div class="recommend-grid">
+              <article class="recommend-item">
+                <div class="recommend-thumb"></div>
+                <div class="recommend-title">青花云纹瓶</div>
+              </article>
+              <article class="recommend-item">
+                <div class="recommend-thumb"></div>
+                <div class="recommend-title">黑釉武将立像</div>
+              </article>
+              <article class="recommend-item">
+                <div class="recommend-thumb"></div>
+                <div class="recommend-title">粉彩花卉瓶</div>
+              </article>
+              <article class="recommend-item">
+                <div class="recommend-thumb"></div>
+                <div class="recommend-title">清代人物像</div>
+              </article>
+              <article class="recommend-item">
+                <div class="recommend-thumb"></div>
+                <div class="recommend-title">万历青花壶</div>
+              </article>
+              <article class="recommend-item">
+                <div class="recommend-thumb"></div>
+                <div class="recommend-title">童戏题材陶瓷盘</div>
+              </article>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      <p class="footer-note">原型页：多条件筛选 + 结果列表 + 详情弹层</p>
+    </div>
+    <script src="./prototype.js"></script>
+  </body>
+</html>
