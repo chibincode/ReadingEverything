@@ -1,9 +1,0 @@
-node_modules
-dist
-web/dist
-output
-data/*
-!data/eagle-folder-rules.json
-.env
-playwright-report
-test-results

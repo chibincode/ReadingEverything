@@ -10,3 +10,6 @@ EnglishPracticeAssistant/.swiftpm/
 *.xcodeproj/xcuserdata/
 *.xcuserdatad/
 *.xcuserstate
+
+# Independent repos
+Autoscreenshot/
